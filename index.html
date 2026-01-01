@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Alamariyah RP - العمارية أر بي</title>
+    <style>
+        :root {
+            --gold: #ffcf40;
+            --gold-glow: rgba(255, 207, 64, 0.4);
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-heavy: rgba(0, 0, 0, 0.85);
+            --text: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            background-image: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), url('رابط_الخلفية_هنا');
+            background-attachment: fixed;
+            background-size: cover;
+            color: var(--text);
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        header { padding: 40px; text-align: center; }
+        header h1 {
+            margin: 0; font-size: 2.8em; color: var(--gold);
+            text-shadow: 0 0 20px var(--gold-glow);
+            letter-spacing: 2px; font-weight: 900;
+        }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+        .controls-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--glass); backdrop-filter: blur(15px);
+            padding: 12px 25px; border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px;
+        }
+
+        select {
+            background: #111; color: var(--gold); border: 1px solid var(--gold);
+            padding: 6px 12px; border-radius: 4px; outline: none; width: 160px;
+        }
+
+        .btn-gov {
+            padding: 8px 18px; border-radius: 6px; border: 1px solid #00d4ff;
+            background: transparent; color: #00d4ff; cursor: pointer;
+            transition: 0.3s; font-weight: bold;
+        }
+        .btn-gov.active { background: #00d4ff; color: #000; box-shadow: 0 0 15px #00d4ff; }
+
+        .company-header-wrapper {
+            margin-top: 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .company-title-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 5px;
+        }
+
+        .company-logo-img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 5px var(--gold-glow));
+        }
+
+        .company-name-text {
+            font-size: 1.8em;
+            color: var(--gold);
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .separator {
+            height: 2px;
+            width: 100%;
+            background: linear-gradient(to left, var(--gold), black);
+            margin-bottom: 25px;
+        }
+
+        .cars-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .car-card {
+            background: var(--glass-heavy); border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.05); overflow: hidden;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .car-card:hover { border-color: var(--gold); transform: translateY(-8px); box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+        .car-card img { width: 100%; height: 170px; object-fit: cover; }
+        
+        .car-info { padding: 20px; }
+        .car-info h4 { margin: 0 0 15px 0; font-size: 1.3em; color: #fff; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        
+        .price-row { display: flex; justify-content: space-between; margin: 5px 0; font-size: 0.9em; }
+        .label { color: #888; }
+        .val { color: var(--gold); font-weight: bold; }
+        .val-supply { color: #aaa; text-decoration: underline; text-underline-offset: 3px; }
+
+        .btn-sell {
+            width: 100%; padding: 12px; margin-top: 20px;
+            background: var(--gold); border: none; border-radius: 8px;
+            font-weight: bold; cursor: pointer; transition: 0.2s; color: #000;
+        }
+        .btn-sell:hover { background: #fff; box-shadow: 0 0 15px #fff; }
+
+        .settings-gear {
+            position: fixed; bottom: 20px; right: 20px;
+            font-size: 20px; cursor: pointer; z-index: 1000;
+            opacity: 0; transition: 0.6s ease;
+            color: rgba(255,255,255,0.2);
+        }
+        .settings-gear:hover { opacity: 1; color: var(--gold); transform: rotate(360deg) scale(1.2); }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.95);
+            backdrop-filter: blur(15px); justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-content {
+            background: #0f0f0f; padding: 30px; border-radius: 20px;
+            width: 90%; max-width: 500px; border: 1px solid var(--gold);
+            max-height: 85vh; overflow-y: auto;
+        }
+
+        input {
+            width: 100%; padding: 12px; margin: 10px 0;
+            background: #181818; border: 1px solid #333;
+            color: white; border-radius: 8px; box-sizing: border-box;
+        }
+
+        .admin-section { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #222; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #222; margin-bottom: 5px; border-radius: 5px; font-size: 0.9em; }
+        .action-btn { cursor: pointer; border: none; padding: 4px 8px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
+        .del-btn { background: #ff4444; color: #fff; }
+        .edit-btn { background: #44aaff; color: #fff; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Alamariyah RP - العمارية أر بي</h1>
+</header>
+
+<div class="container">
+    <div class="controls-row">
+        <div>
+            <label style="font-size: 0.9em; margin-left: 10px; color: #888;">عرض شركة:</label>
+            <select id="company-filter" onchange="renderCars(this.value)">
+                <option value="all">كل الشركات</option>
+            </select>
+        </div>
+        <button id="gov-toggle" class="btn-gov" onclick="toggleGovDiscount()">تفعيل خصم الحكومة (10%)</button>
+    </div>
+
+    <div id="cars-display"></div>
+</div>
+
+<div class="settings-gear" onclick="openSettings()">⚙️</div>
+
+<div id="settings-modal" class="modal">
+    <div class="modal-content">
+        <h3 style="color: var(--gold); text-align:center;">إدارة المعرض الرسمي</h3>
+        
+        <div class="admin-section">
+            <h4 style="margin:0 0 10px 0;">إدارة الشركات</h4>
+            <div id="admin-companies-list" style="margin-bottom:15px;"></div>
+            <input type="text" id="new-comp-name" placeholder="اسم الشركة">
+            <input type="text" id="new-comp-logo" placeholder="رابط شعار الشركة (WebP/PNG)">
+            <button onclick="addCompany()" class="btn-sell" style="background:#333; color:white; margin-top:5px;">إضافة / تحديث الشركة</button>
+        </div>
+
+        <div class="admin-section">
+            <h4 style="margin:0 0 10px 0;">إدارة المركبات</h4>
+            <div id="admin-cars-list" style="margin-bottom:15px; max-height: 150px; overflow-y: auto;"></div>
+            <input type="hidden" id="edit-car-index" value="-1">
+            <input type="text" id="car-name" placeholder="اسم المركبة">
+            <select id="car-company-select" style="width:100%; margin: 8px 0; padding:12px; background:#181818; color:white; border:1px solid #333; border-radius:8px;"></select>
+            <input type="number" id="car-supply" placeholder="سعر التوريد">
+            <input type="number" id="car-min" placeholder="الحد الأدنى">
+            <input type="number" id="car-max" placeholder="الحد الأقصى">
+            <input type="text" id="car-img" placeholder="رابط صورة المركبة">
+            <button id="save-car-btn" onclick="saveCar()" class="btn-sell">حفظ وإدراج المركبة</button>
+        </div>
+
+        <button onclick="closeModal('settings-modal')" style="background:none; border:none; color:#555; width:100%; cursor:pointer; margin-top:10px;">إغلاق لوحة التحكم</button>
+    </div>
+</div>
+
+<div id="sale-modal" class="modal">
+    <div class="modal-content">
+        <h3 style="color: var(--gold); text-align:center;">فاتورة مبيعات العمارية</h3>
+        <p id="sale-car-name" style="text-align:center; color:#fff; font-size:1.2em;"></p>
+        <input type="text" id="staff-name" placeholder="اسم الموظف المسؤول">
+        <input type="text" id="buyer-name" placeholder="اسم العميل المشتري">
+        <input type="number" id="sale-price" placeholder="قيمة البيع النهائية">
+        <button class="btn-sell" onclick="submitSale()">تأكيد العملية وإرسال اللوق</button>
+        <button onclick="closeModal('sale-modal')" style="background:none; border:none; color:#555; width:100%; cursor:pointer; margin-top:10px;">إلغاء</button>
+    </div>
+</div>
+
+<script>
+    const WEBHOOK_URL = "https://discord.com/api/webhooks/1454352877274398782/6hIl9Q4q86oMUT78yucBYbFpmwTFY6Te14nHDA_ZfxSsPrQps4sbFPsk8WHLb-f0WNHo";
+    
+    let companies = JSON.parse(localStorage.getItem('companies_v2')) || [];
+    let cars = JSON.parse(localStorage.getItem('cars_v2')) || [];
+    let govDiscount = false;
+    let currentCar = null;
+
+    function openSettings() {
+        if (prompt("كلمة المرور:") === "1234") {
+            document.getElementById('settings-modal').style.display = 'flex';
+            renderAdminPanel();
+        }
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function updateData() {
+        localStorage.setItem('companies_v2', JSON.stringify(companies));
+        localStorage.setItem('cars_v2', JSON.stringify(cars));
+        renderCars();
+        renderAdminPanel();
+    }
+
+    function addCompany() {
+        const nameInput = document.getElementById('new-comp-name');
+        const logoInput = document.getElementById('new-comp-logo');
+        if (nameInput.value) {
+            companies.push({ name: nameInput.value, logo: logoInput.value });
+            nameInput.value = '';
+            logoInput.value = '';
+            updateData();
+        }
+    }
+
+    function removeCompany(index) {
+        if(confirm("حذف الشركة سيحذف جميع سياراتها، متأكد؟")) {
+            const compName = companies[index].name;
+            cars = cars.filter(c => c.company !== compName);
+            companies.splice(index, 1);
+            updateData();
+        }
+    }
+
+    function saveCar() {
+        const index = parseInt(document.getElementById('edit-car-index').value);
+        const carData = {
+            name: document.getElementById('car-name').value,
+            company: document.getElementById('car-company-select').value,
+            supply: document.getElementById('car-supply').value,
+            minP: document.getElementById('car-min').value,
+            maxP: document.getElementById('car-max').value,
+            img: document.getElementById('car-img').value
+        };
+
+        if (carData.name && carData.company) {
+            if (index === -1) cars.push(carData);
+            else cars[index] = carData;
+            
+            resetCarForm();
+            updateData();
+        }
+    }
+
+    function editCar(index) {
+        const car = cars[index];
+        document.getElementById('edit-car-index').value = index;
+        document.getElementById('car-name').value = car.name;
+        document.getElementById('car-company-select').value = car.company;
+        document.getElementById('car-supply').value = car.supply;
+        document.getElementById('car-min').value = car.minP;
+        document.getElementById('car-max').value = car.maxP;
+        document.getElementById('car-img').value = car.img;
+        document.getElementById('save-car-btn').innerText = "تحديث بيانات السيارة";
+    }
+
+    function resetCarForm() {
+        document.getElementById('edit-car-index').value = "-1";
+        document.getElementById('car-name').value = "";
+        document.getElementById('car-supply').value = "";
+        document.getElementById('car-min').value = "";
+        document.getElementById('car-max').value = "";
+        document.getElementById('car-img').value = "";
+        document.getElementById('save-car-btn').innerText = "حفظ وإدراج المركبة";
+    }
+
+    function removeCar(index) {
+        if(confirm("حذف هذه السيارة؟")) {
+            cars.splice(index, 1);
+            updateData();
+        }
+    }
+
+    function renderAdminPanel() {
+        // إدارة الشركات
+        const compList = document.getElementById('admin-companies-list');
+        compList.innerHTML = companies.map((c, i) => `
+            <div class="item-row">
+                <span>${c.name}</span>
+                <button onclick="removeCompany(${i})" class="action-btn del-btn">حذف</button>
+            </div>
+        `).join('');
+
+        // إدارة السيارات
+        const carList = document.getElementById('admin-cars-list');
+        carList.innerHTML = cars.map((c, i) => `
+            <div class="item-row">
+                <span>${c.name}</span>
+                <div>
+                    <button onclick="editCar(${i})" class="action-btn edit-btn">تعديل</button>
+                    <button onclick="removeCar(${i})" class="action-btn del-btn">حذف</button>
+                </div>
+            </div>
+        `).join('');
+
+        const selects = ['car-company-select', 'company-filter'];
+        selects.forEach(id => {
+            const el = document.getElementById(id);
+            const currentVal = el.value;
+            el.innerHTML = (id === 'company-filter' ? '<option value="all">كل الشركات</option>' : '') + 
+                companies.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            el.value = currentVal || (id === 'company-filter' ? 'all' : (companies[0]?.name || ''));
+        });
+    }
+
+    function renderCars(filter = 'all') {
+        const display = document.getElementById('cars-display');
+        display.innerHTML = '';
+        const filteredComp = filter === 'all' ? companies : companies.filter(c => c.name === filter);
+
+        filteredComp.forEach(comp => {
+            const compCars = cars.filter(c => c.company === comp.name);
+            if (compCars.length > 0) {
+                let html = `
+                    <div class="company-header-wrapper">
+                        <div class="company-title-area">
+                            <span class="company-name-text">${comp.name}</span>
+                            ${comp.logo ? `<img src="${comp.logo}" class="company-logo-img">` : ''}
+                        </div>
+                        <div class="separator"></div>
+                    </div>
+                    <div class="cars-grid">
+                `;
+                compCars.forEach(car => {
+                    const min = govDiscount ? Math.floor(car.minP * 0.9) : car.minP;
+                    const max = govDiscount ? Math.floor(car.maxP * 0.9) : car.maxP;
+                    html += `
+                        <div class="car-card">
+                            <img src="${car.img}" onerror="this.src='https://via.placeholder.com/400x200?text=Alamariyah+Car'">
+                            <div class="car-info">
+                                <h4>${car.name}</h4>
+                                <div class="price-row">
+                                    <span class="label">سعر التوريد:</span>
+                                    <span class="val val-supply">${car.supply}</span>
+                                </div>
+                                <div class="price-row">
+                                    <span class="label">الحد الأدنى:</span>
+                                    <span class="val">${min}</span>
+                                </div>
+                                <div class="price-row">
+                                    <span class="label">الحد الأقصى:</span>
+                                    <span class="val">${max}</span>
+                                </div>
+                                <button class="btn-sell" onclick="openSale('${car.name}')">إتمام البيع</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                display.innerHTML += html + `</div>`;
+            }
+        });
+    }
+
+    function openSale(name) {
+        currentCar = name;
+        document.getElementById('sale-car-name').innerText = "السيارة: " + name;
+        document.getElementById('sale-modal').style.display = 'flex';
+    }
+
+    async function submitSale() {
+        const staff = document.getElementById('staff-name').value;
+        const buyer = document.getElementById('buyer-name').value;
+        const price = document.getElementById('sale-price').value;
+
+        if (!staff || !buyer || !price) return alert("يرجى ملء كافة الحقول");
+
+        const payload = {
+            embeds: [{
+                title: "💰 فاتورة مبيعات جديدة - معرض العمارية",
+                color: 16764736,
+                fields: [
+                    { name: "👤 الموظف:", value: "```" + staff + "```", inline: true },
+                    { name: "👤 العميل المشتري:", value: "```" + buyer + "```", inline: true },
+                    { name: "🚗 المركبة المباعة:", value: "```" + currentCar + "```", inline: false },
+                    { name: "💵 السعر النهائي:", value: "```" + price + " ريال```", inline: true }
+                ],
+                footer: { text: "Alamariyah RP - نظام المعرض" },
+                timestamp: new Date()
+            }]
+        };
+
+        try {
+            await fetch(WEBHOOK_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
+            alert("✅ تم إرسال الفاتورة بنجاح!");
+            closeModal('sale-modal');
+        } catch (e) {
+            alert("❌ خطأ في الاتصال بالديسكورد");
+        }
+    }
+
+    function toggleGovDiscount() {
+        govDiscount = !govDiscount;
+        const btn = document.getElementById('gov-toggle');
+        btn.classList.toggle('active');
+        btn.innerText = govDiscount ? "إلغاء الخصم الحكومي" : "تفعيل خصم الحكومة (10%)";
+        renderCars(document.getElementById('company-filter').value);
+    }
+
+    renderAdminPanel();
+    renderCars();
+</script>
+</body>
+</html>
