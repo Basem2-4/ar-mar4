@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Alamariyah RP - العمارية أر بي</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
     <style>
         :root {
             --gold: #ffcf40;
@@ -183,7 +186,7 @@
         <div class="admin-section">
             <h4 style="margin:0 0 10px 0;">إدارة المركبات</h4>
             <div id="admin-cars-list" style="margin-bottom:15px; max-height: 150px; overflow-y: auto;"></div>
-            <input type="hidden" id="edit-car-index" value="-1">
+            <input type="hidden" id="edit-car-key" value="">
             <input type="text" id="car-name" placeholder="اسم المركبة">
             <select id="car-company-select" style="width:100%; margin: 8px 0; padding:12px; background:#181818; color:white; border:1px solid #333; border-radius:8px;"></select>
             <input type="number" id="car-supply" placeholder="سعر التوريد">
@@ -210,51 +213,67 @@
 </div>
 
 <script>
+    // --- إعدادات Firebase الخاصة بك ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyDE-dsIv_8WR6P5CYu7yqbCuSMgzEDtFoI",
+        authDomain: "shob-car.firebaseapp.com",
+        databaseURL: "https://shob-car-default-rtdb.firebaseio.com",
+        projectId: "shob-car",
+        storageBucket: "shob-car.firebasestorage.app",
+        messagingSenderId: "1006549034950",
+        appId: "1:1006549034950:web:40ba3a69d3458973ed74c7",
+        measurementId: "G-R7CJ1QS588"
+    };
+
+    // بدء تشغيل Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     const WEBHOOK_URL = "https://discord.com/api/webhooks/1454352877274398782/6hIl9Q4q86oMUT78yucBYbFpmwTFY6Te14nHDA_ZfxSsPrQps4sbFPsk8WHLb-f0WNHo";
     
-    let companies = JSON.parse(localStorage.getItem('companies_v2')) || [];
-    let cars = JSON.parse(localStorage.getItem('cars_v2')) || [];
+    let companies = [];
+    let cars = {};
     let govDiscount = false;
     let currentCar = null;
+
+    // جلب البيانات من السحابة بشكل لحظي
+    db.ref('/').on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        companies = Object.values(data.companies || {});
+        cars = data.cars || {};
+        renderCars(document.getElementById('company-filter').value);
+        renderAdminPanel();
+    });
 
     function openSettings() {
         if (prompt("كلمة المرور:") === "1234") {
             document.getElementById('settings-modal').style.display = 'flex';
-            renderAdminPanel();
         }
     }
 
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    function updateData() {
-        localStorage.setItem('companies_v2', JSON.stringify(companies));
-        localStorage.setItem('cars_v2', JSON.stringify(cars));
-        renderCars();
-        renderAdminPanel();
-    }
-
     function addCompany() {
         const nameInput = document.getElementById('new-comp-name');
         const logoInput = document.getElementById('new-comp-logo');
         if (nameInput.value) {
-            companies.push({ name: nameInput.value, logo: logoInput.value });
+            db.ref('companies/' + nameInput.value).set({ 
+                name: nameInput.value, 
+                logo: logoInput.value 
+            });
             nameInput.value = '';
             logoInput.value = '';
-            updateData();
         }
     }
 
-    function removeCompany(index) {
-        if(confirm("حذف الشركة سيحذف جميع سياراتها، متأكد؟")) {
-            const compName = companies[index].name;
-            cars = cars.filter(c => c.company !== compName);
-            companies.splice(index, 1);
-            updateData();
+    function removeCompany(compName) {
+        if(confirm("حذف الشركة؟")) {
+            db.ref('companies/' + compName).remove();
         }
     }
 
     function saveCar() {
-        const index = parseInt(document.getElementById('edit-car-index').value);
+        const key = document.getElementById('edit-car-key').value;
         const carData = {
             name: document.getElementById('car-name').value,
             company: document.getElementById('car-company-select').value,
@@ -265,17 +284,18 @@
         };
 
         if (carData.name && carData.company) {
-            if (index === -1) cars.push(carData);
-            else cars[index] = carData;
-            
+            if (key) {
+                db.ref('cars/' + key).set(carData);
+            } else {
+                db.ref('cars').push(carData);
+            }
             resetCarForm();
-            updateData();
         }
     }
 
-    function editCar(index) {
-        const car = cars[index];
-        document.getElementById('edit-car-index').value = index;
+    function editCar(id) {
+        const car = cars[id];
+        document.getElementById('edit-car-key').value = id;
         document.getElementById('car-name').value = car.name;
         document.getElementById('car-company-select').value = car.company;
         document.getElementById('car-supply').value = car.supply;
@@ -286,7 +306,7 @@
     }
 
     function resetCarForm() {
-        document.getElementById('edit-car-index').value = "-1";
+        document.getElementById('edit-car-key').value = "";
         document.getElementById('car-name').value = "";
         document.getElementById('car-supply').value = "";
         document.getElementById('car-min').value = "";
@@ -295,31 +315,30 @@
         document.getElementById('save-car-btn').innerText = "حفظ وإدراج المركبة";
     }
 
-    function removeCar(index) {
+    function removeCar(id) {
         if(confirm("حذف هذه السيارة؟")) {
-            cars.splice(index, 1);
-            updateData();
+            db.ref('cars/' + id).remove();
         }
     }
 
     function renderAdminPanel() {
         // إدارة الشركات
         const compList = document.getElementById('admin-companies-list');
-        compList.innerHTML = companies.map((c, i) => `
+        compList.innerHTML = companies.map((c) => `
             <div class="item-row">
                 <span>${c.name}</span>
-                <button onclick="removeCompany(${i})" class="action-btn del-btn">حذف</button>
+                <button onclick="removeCompany('${c.name}')" class="action-btn del-btn">حذف</button>
             </div>
         `).join('');
 
         // إدارة السيارات
         const carList = document.getElementById('admin-cars-list');
-        carList.innerHTML = cars.map((c, i) => `
+        carList.innerHTML = Object.entries(cars).map(([id, c]) => `
             <div class="item-row">
                 <span>${c.name}</span>
                 <div>
-                    <button onclick="editCar(${i})" class="action-btn edit-btn">تعديل</button>
-                    <button onclick="removeCar(${i})" class="action-btn del-btn">حذف</button>
+                    <button onclick="editCar('${id}')" class="action-btn edit-btn">تعديل</button>
+                    <button onclick="removeCar('${id}')" class="action-btn del-btn">حذف</button>
                 </div>
             </div>
         `).join('');
@@ -330,7 +349,7 @@
             const currentVal = el.value;
             el.innerHTML = (id === 'company-filter' ? '<option value="all">كل الشركات</option>' : '') + 
                 companies.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            el.value = currentVal || (id === 'company-filter' ? 'all' : (companies[0]?.name || ''));
+            if (currentVal) el.value = currentVal;
         });
     }
 
@@ -340,7 +359,7 @@
         const filteredComp = filter === 'all' ? companies : companies.filter(c => c.name === filter);
 
         filteredComp.forEach(comp => {
-            const compCars = cars.filter(c => c.company === comp.name);
+            const compCars = Object.values(cars).filter(c => c.company === comp.name);
             if (compCars.length > 0) {
                 let html = `
                     <div class="company-header-wrapper">
@@ -426,9 +445,6 @@
         btn.innerText = govDiscount ? "إلغاء الخصم الحكومي" : "تفعيل خصم الحكومة (10%)";
         renderCars(document.getElementById('company-filter').value);
     }
-
-    renderAdminPanel();
-    renderCars();
 </script>
 </body>
 </html>
