@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Alamariyah RP - العمارية أر بي</title>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
     <style>
         :root {
@@ -18,12 +18,14 @@
         body {
             font-family: 'Segoe UI', sans-serif;
             background: #0a0a0a;
-            background-image: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), url('رابط_الخلفية_هنا');
+            background-image: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), url('');
             background-attachment: fixed;
             background-size: cover;
+            background-position: center;
             color: var(--text);
             margin: 0;
             overflow-x: hidden;
+            transition: background-image 0.5s ease-in-out;
         }
 
         header { padding: 40px; text-align: center; }
@@ -176,6 +178,12 @@
         <h3 style="color: var(--gold); text-align:center;">إدارة المعرض الرسمي</h3>
         
         <div class="admin-section">
+            <h4 style="margin:0 0 10px 0;">خلفية الموقع</h4>
+            <input type="text" id="site-bg-url" placeholder="رابط الصورة المستضيفة (URL)">
+            <button onclick="updateBackground()" class="btn-sell" style="background:#00d4ff; color:#000; margin-top:5px;">تحديث الخلفية</button>
+        </div>
+
+        <div class="admin-section">
             <h4 style="margin:0 0 10px 0;">إدارة الشركات</h4>
             <div id="admin-companies-list" style="margin-bottom:15px;"></div>
             <input type="text" id="new-comp-name" placeholder="اسم الشركة">
@@ -213,7 +221,6 @@
 </div>
 
 <script>
-    // --- إعدادات Firebase الخاصة بك ---
     const firebaseConfig = {
         apiKey: "AIzaSyDE-dsIv_8WR6P5CYu7yqbCuSMgzEDtFoI",
         authDomain: "shob-car.firebaseapp.com",
@@ -225,7 +232,6 @@
         measurementId: "G-R7CJ1QS588"
     };
 
-    // بدء تشغيل Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
@@ -236,14 +242,30 @@
     let govDiscount = false;
     let currentCar = null;
 
-    // جلب البيانات من السحابة بشكل لحظي
     db.ref('/').on('value', (snapshot) => {
         const data = snapshot.val() || {};
         companies = Object.values(data.companies || {});
         cars = data.cars || {};
-        renderCars(document.getElementById('company-filter').value);
-        renderAdminPanel();
+        
+        // تحديث الخلفية عند التغيير في الداتابيز
+        if(data.settings && data.settings.background) {
+            document.body.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), url('${data.settings.background}')`;
+            document.getElementById('site-bg-url').value = data.settings.background;
+        }
+
+        const currentFilter = document.getElementById('company-filter').value || 'all';
+        renderAdminPanel(); 
+        renderCars(currentFilter);
     });
+
+    function updateBackground() {
+        const url = document.getElementById('site-bg-url').value;
+        if(url) {
+            db.ref('settings/background').set(url).then(() => {
+                alert("تم تحديث الخلفية بنجاح!");
+            });
+        }
+    }
 
     function openSettings() {
         if (prompt("كلمة المرور:") === "1234") {
@@ -322,7 +344,6 @@
     }
 
     function renderAdminPanel() {
-        // إدارة الشركات
         const compList = document.getElementById('admin-companies-list');
         compList.innerHTML = companies.map((c) => `
             <div class="item-row">
@@ -331,7 +352,6 @@
             </div>
         `).join('');
 
-        // إدارة السيارات
         const carList = document.getElementById('admin-cars-list');
         carList.innerHTML = Object.entries(cars).map(([id, c]) => `
             <div class="item-row">
@@ -349,7 +369,7 @@
             const currentVal = el.value;
             el.innerHTML = (id === 'company-filter' ? '<option value="all">كل الشركات</option>' : '') + 
                 companies.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            if (currentVal) el.value = currentVal;
+            if (currentVal && Array.from(el.options).some(opt => opt.value === currentVal)) el.value = currentVal;
         });
     }
 
