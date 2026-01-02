@@ -455,7 +455,8 @@
 
         if (!staff || !buyer || !price || !pChars || !pNums) return alert("يرجى ملء كافة الحقول");
 
-        const formattedChars = pChars.split('').join(' ، ');
+        // تم استبدال الفاصلة بمسافة هنا
+        const formattedChars = pChars.split('').join(' ');
         const fullPlate = formattedChars + " - " + pNums;
 
         const payload = {
